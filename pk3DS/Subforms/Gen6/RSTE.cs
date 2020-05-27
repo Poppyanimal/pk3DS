@@ -551,7 +551,12 @@ namespace pk3DS
                 // Trainer Type/Mega Evo
                 int type = GetRandomType(i);
                 bool mevo = rEnsureMEvo.Contains(i);
-                bool typerand = (rTypeTheme && !rGymE4Only) || (rTypeTheme && rImportant[i] != null && ImportantClasses.Contains(rImportant[i]));
+                bool typerand = false;
+                if ((rTypeTheme && !rGymE4Only) || (rTypeTheme && rImportant[i] != null) && ImportantClasses.Contains(rImportant[i].Substring(0, rImportant[i].Length - 1)))
+                {
+                    typerand = true;
+                    Console.Out.WriteLine(i + rImportant[i]);
+                }
                 rSpeciesRand.rType = typerand;
 
                 byte[] trd = trdata[i];
@@ -725,18 +730,24 @@ namespace pk3DS
                 int lastPKM = Math.Max(t.NumPokemon - 1, 0); // 0,1-6 => 0-5 (never is 0)
                 var avgBST = (int)t.Team.Average(pk => Main.SpeciesStat[pk.Species].BST);
                 int avgLevel = (int)t.Team.Average(pk => pk.Level);
+                int minLevel = (int)t.Team.Min(pk => pk.Level);
+                int maxLevel = (int)t.Team.Max(pk => pk.Level);
                 var pinfo = Main.SpeciesStat.OrderBy(pk => Math.Abs(avgBST - pk.BST)).First();
                 int avgSpec = Array.IndexOf(Main.SpeciesStat, pinfo);
+
+                //TODO: determine evos from and to for evo based randomization
 
                 t.NumPokemon = (byte)newSize;
                 for (int f = lastPKM + 1; f < t.NumPokemon; f++)
                 {
                     Array.Resize(ref t.Team, (int)newSize);
-                    t.Team[f] = // clone last pkm, keeping an average level for all new pkm
+                    t.Team[f] = // clone random pkm on team, keeping level within range of original team
                         new trdata6.Pokemon(t.Team[lastPKM].Write(t.Item, t.Moves), t.Item, t.Moves)
                         {
-                            Species = (ushort)rSpeciesRand.GetRandomSpecies(avgSpec),
-                            Level = (ushort)avgLevel,
+                            //Species = (ushort)rSpeciesRand.GetRandomSpecies(avgSpec),
+                            //Level = (ushort)avgLevel,
+                            Species = t.Team.ElementAt(Util.rand.Next(lastPKM + 1)).Species,
+                            Level = (ushort)Util.rand.Next(minLevel, maxLevel),
                         };
                 }
             }

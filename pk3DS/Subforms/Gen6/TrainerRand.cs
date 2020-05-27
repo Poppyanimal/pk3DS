@@ -83,7 +83,6 @@ namespace pk3DS
             RSTE.rGiftPercent = NUD_GiftPercent.Value;
             RSTE.rDiffAI = CHK_MaxDiffAI.Checked;
             RSTE.rTypeTheme = CHK_TypeTheme.Checked;
-            RSTE.rTypeGymTrainers = CHK_GymTrainers.Checked;
             RSTE.rGymE4Only = CHK_GymE4Only.Checked;
             RSTE.rMinPKM = NUD_RMin.Value;
             RSTE.rMaxPKM = NUD_RMax.Value;
@@ -141,7 +140,7 @@ namespace pk3DS
                 CHK_L.Checked = CHK_E.Checked = CHK_StoryMEvos.Checked = CHK_ForceFullyEvolved.Checked =
                 CHK_RandomPKM.Checked;
 
-            CHK_TypeTheme.Checked = CHK_GymTrainers.Checked = CHK_GymE4Only.Checked = 
+            CHK_TypeTheme.Checked = CHK_GymE4Only.Checked = 
                 CHK_BST.Checked = CHK_6PKM.Checked = CHK_RandomMegaForm.Checked = false; // Off by default
         }
 
@@ -168,9 +167,7 @@ namespace pk3DS
 
         private void CHK_TypeTheme_CheckedChanged(object sender, EventArgs e)
         {
-            CHK_GymTrainers.Enabled = CHK_GymTrainers.Checked = CHK_GymE4Only.Enabled = CHK_TypeTheme.Checked;
-            if (!CHK_TypeTheme.Checked)
-                CHK_GymTrainers.Checked = CHK_GymE4Only.Checked = false;
+            CHK_GymE4Only.Checked = CHK_GymE4Only.Enabled = CHK_TypeTheme.Checked;
         }
 
         private void CHK_RandomClass_CheckedChanged(object sender, EventArgs e)
