@@ -66,8 +66,19 @@ namespace pk3DS
                         ? Legal.SpecialClasses_ORAS
                         : Legal.SpecialClasses_XY
                     : new int[] {};
-                RSTE.rOnlySingles = CHK_OnlySingles.Checked;
             }
+
+            RSTE.rBattleType = CHK_ChangeBattleType.Checked;
+            if (RSTE.rBattleType)
+            {
+                RSTE.rBattleTypeSingles = CHK_ChangeBattleType_AllowSingles.Checked;
+                RSTE.rBattleTypeDoubles = CHK_ChangeBattleType_AllowDoubles.Checked;
+                RSTE.rBattleTypeTriples = CHK_ChangeBattleType_AllowTriples.Checked;
+                RSTE.rBattleTypeRotation = CHK_ChangeBattleType_AllowRotation.Checked;
+                if (!RSTE.rBattleTypeSingles && !RSTE.rBattleTypeDoubles && !RSTE.rBattleTypeTriples && !RSTE.rBattleTypeRotation)
+                    RSTE.rBattleType = false;
+            }
+
             RSTE.rGift = CHK_RandomGift.Checked;
             RSTE.rGiftPercent = NUD_GiftPercent.Value;
             RSTE.rDiffAI = CHK_MaxDiffAI.Checked;
@@ -165,7 +176,17 @@ namespace pk3DS
         private void CHK_RandomClass_CheckedChanged(object sender, EventArgs e)
         {
             CHK_IgnoreSpecialClass.Enabled = CHK_IgnoreSpecialClass.Checked = 
-            CHK_OnlySingles.Enabled = CHK_OnlySingles.Checked = CHK_RandomClass.Checked;
+            CHK_RandomClass.Checked;
+        }
+
+        private void CHK_ChangeBattleType_CheckedChanged(object sender, EventArgs e)
+        {
+            CHK_ChangeBattleType_AllowSingles.Enabled = CHK_ChangeBattleType_AllowSingles.Checked =
+            CHK_ChangeBattleType_AllowDoubles.Enabled = CHK_ChangeBattleType_AllowDoubles.Checked =
+            CHK_ChangeBattleType_AllowTriples.Enabled = CHK_ChangeBattleType_AllowTriples.Checked =
+            CHK_ChangeBattleType_AllowRotation.Enabled = CHK_ChangeBattleType_AllowRotation.Checked =
+            CHK_ChangeBattleType.Checked;
+
         }
 
         private void changeMoveRandomization(object sender, EventArgs e)

@@ -442,7 +442,10 @@ namespace pk3DS
 
         public static bool rPKM, rSmart, rLevel, rMove, rMetronome, rNoMove, rForceHighPower, rAbility, rDiffAI,
             rDiffIV, rClass, rGift, rItem, rDoRand, rRandomMegas, rGymE4Only,
-            rTypeTheme, rTypeGymTrainers, rOnlySingles, rDMG, rSTAB, r6PKM, rForceFullyEvolved;
+            rTypeTheme, rTypeGymTrainers, rDMG, rSTAB, r6PKM, rForceFullyEvolved;
+
+        public static bool rBattleType; //Change battle typing, will randomize if more than one typing is selected
+        public static bool rBattleTypeSingles, rBattleTypeDoubles, rBattleTypeTriples, rBattleTypeRotation; //valid battle types for battle type randomization, assures the minimum pokemon on a trainers team for that battle type during randomization
 
         public static bool rNoFixedDamage;
         internal static bool[] rThemedClasses = { };
@@ -559,8 +562,15 @@ namespace pk3DS
                     Item = rItem || checkBox_Item.Checked
                 };
 
+                bool isFirstBattle = false;
+                if(rImportant[i] == null && (rTags[i] == "SHAUNA" || rTags[i] == "RIVAL1" || rTags[i] == "RIVAL2" || rTags[i] == "RIVAL3"))
+                {
+                    isFirstBattle = true;
+                }
+
+                RandomizeTrainerBattleType(t, trClass, isFirstBattle);
                 SetMinMaxPKM(t);
-                SetFullParties(t, rImportant[i] == null);
+                SetFullParties(t, rImportant[i] != null);
                 RandomizeTrainerAIClass(t, trClass);
                 RandomizeTrainerPrizeItem(t);
                 RandomizeTeam(t, move, learn, itemvals, type, mevo, typerand);
@@ -570,6 +580,21 @@ namespace pk3DS
             }
             CB_TrainerID.SelectedIndex = 1;
             WinFormsUtil.Alert("Randomized all Trainers according to specification!", "Press the Dump to .TXT button to view the new Trainer information!");
+        }
+
+        private static void RandomizeTrainerBattleType(trdata6 t, string[] trClass, bool isFirstBattle)
+        {
+            if(rBattleType && !isFirstBattle)
+            {
+                List<byte> validBattleTypes = new List<byte>();
+                if (rBattleTypeSingles) validBattleTypes.Add(0);
+                if (rBattleTypeDoubles) validBattleTypes.Add(1);
+                if (rBattleTypeTriples) validBattleTypes.Add(2);
+                if (rBattleTypeRotation) validBattleTypes.Add(3);
+
+                //t battle type is random selection from list if list isnt empty
+                if(validBattleTypes.Count > 0) t.BattleType = validBattleTypes.ElementAt(Util.rand.Next(validBattleTypes.Count));
+            }
         }
 
         private static void RandomizeTeam(trdata6 t, MoveRandomizer move, LearnsetRandomizer learn, ushort[] itemvals, int type, bool mevo, bool typerand)
@@ -663,19 +688,50 @@ namespace pk3DS
 
         private static void SetMinMaxPKM(trdata6 t)
         {
-            int lastPKM = Math.Max(t.NumPokemon - 1, 0); // 0,1-6 => 0-5 (never is 0)
-            var avgBST = (int)t.Team.Average(pk => Main.SpeciesStat[pk.Species].BST);
-            int avgLevel = (int)t.Team.Average(pk => pk.Level);
-            var pinfo = Main.SpeciesStat.OrderBy(pk => Math.Abs(avgBST - pk.BST)).First();
-            int avgSpec = Array.IndexOf(Main.SpeciesStat, pinfo);
+            // set maximum pkm, don't modify hordes
+            if (t.NumPokemon > rMaxPKM && t.BattleType != 4)
+            {
+                resizePokemonTeam(t, (byte)rMaxPKM);
+            }
 
             // set minimum pkm, don't modify hordes
             if (t.NumPokemon < rMinPKM && t.BattleType != 4)
             {
-                t.NumPokemon = (byte)rMinPKM;
+                resizePokemonTeam(t, (byte)rMinPKM);
+            }
+
+            //set minimum pokemon if minimum is smaller than required size for that battle type
+            if (t.BattleType == 1 && t.NumPokemon < 2) //if double battle with less than 2 pokemon
+            {
+                resizePokemonTeam(t, (byte)2);
+            }
+            else if ((t.BattleType == 2 || t.BattleType == 3) && t.NumPokemon < 3) //if triple or rotation with less than 3 pokemon
+            {
+                resizePokemonTeam(t, (byte)3);
+            }
+        }
+
+        private static void resizePokemonTeam(trdata6 t, byte newSize)
+        {
+            //TODO: cloned pokemon will be a random pokemon on the team
+            //does nothing if new size is same as old size
+            if(newSize < t.NumPokemon)
+            {
+                Array.Resize(ref t.Team, (int)newSize);
+                t.NumPokemon = newSize;
+            }
+            else if(newSize > t.NumPokemon)
+            {
+                int lastPKM = Math.Max(t.NumPokemon - 1, 0); // 0,1-6 => 0-5 (never is 0)
+                var avgBST = (int)t.Team.Average(pk => Main.SpeciesStat[pk.Species].BST);
+                int avgLevel = (int)t.Team.Average(pk => pk.Level);
+                var pinfo = Main.SpeciesStat.OrderBy(pk => Math.Abs(avgBST - pk.BST)).First();
+                int avgSpec = Array.IndexOf(Main.SpeciesStat, pinfo);
+
+                t.NumPokemon = (byte)newSize;
                 for (int f = lastPKM + 1; f < t.NumPokemon; f++)
                 {
-                    Array.Resize(ref t.Team, (int)rMinPKM);
+                    Array.Resize(ref t.Team, (int)newSize);
                     t.Team[f] = // clone last pkm, keeping an average level for all new pkm
                         new trdata6.Pokemon(t.Team[lastPKM].Write(t.Item, t.Moves), t.Item, t.Moves)
                         {
@@ -684,38 +740,15 @@ namespace pk3DS
                         };
                 }
             }
-
-            // set maximum pkm, don't modify hordes
-            if (t.NumPokemon > rMaxPKM && t.BattleType != 4)
-            {
-                Array.Resize(ref t.Team, (int)rMaxPKM);
-                t.NumPokemon = (byte)rMaxPKM;
-            }
         }
 
         private static void SetFullParties(trdata6 t, bool important)
         {
-            int lastPKM = Math.Max(t.NumPokemon - 1, 0); // 0,1-6 => 0-5 (never is 0)
-            var avgBST = (int)t.Team.Average(pk => Main.SpeciesStat[pk.Species].BST);
-            int avgLevel = (int)t.Team.Average(pk => pk.Level);
-            var pinfo = Main.SpeciesStat.OrderBy(pk => Math.Abs(avgBST - pk.BST)).First();
-            int avgSpec = Array.IndexOf(Main.SpeciesStat, pinfo);
-
             // 6 pkm for important trainers, skip the first rival battles
-            if (!r6PKM || important)
+            if (!r6PKM || !important)
                 return;
 
-            t.NumPokemon = 6;
-            for (int f = lastPKM + 1; f < t.NumPokemon; f++)
-            {
-                Array.Resize(ref t.Team, t.NumPokemon);
-                t.Team[f] = // clone last pkm, keeping an average level for all new pkm
-                    new trdata6.Pokemon(t.Team[lastPKM].Write(t.Item, t.Moves), t.Item, t.Moves)
-                    {
-                        Species = (ushort)rSpeciesRand.GetRandomSpecies(avgSpec),
-                        Level = (ushort)avgLevel,
-                    };
-            }
+            resizePokemonTeam(t, 6);
         }
 
         private static void RandomizeTrainerAIClass(trdata6 t, string[] trClass)
@@ -731,7 +764,7 @@ namespace pk3DS
             else
             if (
                 rClass // Classes selected to be randomized
-                && (!rOnlySingles || t.BattleType == 0) //  Nonsingles only get changed if rOnlySingles
+                //&& (!rOnlySingles || t.BattleType == 0) //  Nonsingles only get changed if rOnlySingles
                 && !rIgnoreClass.Contains(t.Class) // Current class isn't a special class
                 )
             {
