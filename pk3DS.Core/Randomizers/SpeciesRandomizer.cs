@@ -49,7 +49,7 @@ namespace pk3DS.Core.Randomizers
         private const bool allowDupeTestSkip = true;
         private const int skipTypeTestLoopThreshold = 70000;
         private const bool allowTypeTestSkip = true;
-        private const int skipEvoTestLoopThreshold = 100000;
+        private const int skipEvoTestLoopThreshold = 1000000;
         private const bool allowEvoTestSkip = true;
 
         #region Random Species Filtering Parameters
@@ -262,16 +262,19 @@ namespace pk3DS.Core.Randomizers
 
             //System.Console.WriteLine(loop);
             // Verify it meets specifications
-            if ((!allowDupeTestSkip || loop > skipDupeTestLoopThreshold) && IsSpeciesReplacementBad(newSpecies, currentSpecies)) // no A->A randomization
+            if ((!allowDupeTestSkip || loop < skipDupeTestLoopThreshold) && IsSpeciesReplacementBad(newSpecies, currentSpecies)) // no A->A randomization
                 return false;
             if (IsSpeciesEXPRateBad(oldpkm, pkm))
                 return false;
-            if ((!allowTypeTestSkip || loop > skipTypeTestLoopThreshold) && IsSpeciesTypeBad(oldpkm, pkm))
+            if ((!allowTypeTestSkip || loop < skipTypeTestLoopThreshold) && IsSpeciesTypeBad(oldpkm, pkm))
                 return false;
             if (IsSpeciesBSTBad(oldpkm, pkm))
                 return false;
-            if ((!allowEvoTestSkip || loop > skipEvoTestLoopThreshold) && IsSpeciesEVOBad(oldpkm, pkm, currentSpecies, newSpecies))
+            if ((!allowEvoTestSkip || loop < skipEvoTestLoopThreshold) && IsSpeciesEVOBad(oldpkm, pkm, currentSpecies, newSpecies))
+            {
+                System.Console.WriteLine(skipEvoTestLoopThreshold + " vs " + loop);
                 return false;
+            }
             return true;
         }
     }
