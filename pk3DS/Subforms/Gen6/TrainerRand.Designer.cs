@@ -49,6 +49,7 @@
             this.CHK_RandomMegaForm = new System.Windows.Forms.CheckBox();
             this.CHK_TypeTheme = new System.Windows.Forms.CheckBox();
             this.CHK_BST = new System.Windows.Forms.CheckBox();
+            this.CHK_EVO = new System.Windows.Forms.CheckBox();
             this.CHK_E = new System.Windows.Forms.CheckBox();
             this.CHK_L = new System.Windows.Forms.CheckBox();
             this.CHK_G6 = new System.Windows.Forms.CheckBox();
@@ -255,6 +256,7 @@
             this.GB_Tweak.Controls.Add(this.CHK_RandomMegaForm);
             this.GB_Tweak.Controls.Add(this.CHK_TypeTheme);
             this.GB_Tweak.Controls.Add(this.CHK_BST);
+            this.GB_Tweak.Controls.Add(this.CHK_EVO);
             this.GB_Tweak.Controls.Add(this.CHK_E);
             this.GB_Tweak.Controls.Add(this.CHK_L);
             this.GB_Tweak.Controls.Add(this.CHK_G6);
@@ -345,6 +347,16 @@
             this.CHK_BST.TabIndex = 288;
             this.CHK_BST.Text = "Randomize by BST";
             this.CHK_BST.UseVisualStyleBackColor = true;
+            // 
+            // CHK_EVO
+            // 
+            this.CHK_EVO.AutoSize = true;
+            this.CHK_EVO.Location = new System.Drawing.Point(141, 81);
+            this.CHK_EVO.Name = "CHK_EVO";
+            this.CHK_EVO.Size = new System.Drawing.Size(118, 17);
+            this.CHK_EVO.TabIndex = 288;
+            this.CHK_EVO.Text = "Randomize by EVO";
+            this.CHK_EVO.UseVisualStyleBackColor = true;
             // 
             // CHK_E
             // 
@@ -771,6 +783,7 @@
         private System.Windows.Forms.CheckBox CHK_Level;
         private System.Windows.Forms.GroupBox GB_Tweak;
         private System.Windows.Forms.CheckBox CHK_BST;
+        private System.Windows.Forms.CheckBox CHK_EVO;
         private System.Windows.Forms.CheckBox CHK_E;
         private System.Windows.Forms.CheckBox CHK_L;
         private System.Windows.Forms.CheckBox CHK_G6;

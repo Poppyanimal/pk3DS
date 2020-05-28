@@ -718,7 +718,6 @@ namespace pk3DS
 
         private static void resizePokemonTeam(trdata6 t, byte newSize)
         {
-            //TODO: cloned pokemon will be a random pokemon on the team
             //does nothing if new size is same as old size
             if(newSize < t.NumPokemon)
             {

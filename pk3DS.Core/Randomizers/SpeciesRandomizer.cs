@@ -41,7 +41,16 @@ namespace pk3DS.Core.Randomizers
         public bool rEXP = false;
         public bool rBST = true;
         public bool rType = false;
+        public bool rEVO = false;
         #endregion
+
+        //thresholds to stop certain tests when determining pokemon replacements (done to prevent infinite loops)
+        private const int skipDupeTestLoopThreshold = 10000; //was loopctr < MaxSpeciesID * 10 inside of the method itself
+        private const bool allowDupeTestSkip = true;
+        private const int skipTypeTestLoopThreshold = 70000;
+        private const bool allowTypeTestSkip = true;
+        private const int skipEvoTestLoopThreshold = 100000;
+        private const bool allowEvoTestSkip = true;
 
         #region Random Species Filtering Parameters
         private GenericRandomizer RandSpec;
@@ -57,8 +66,10 @@ namespace pk3DS.Core.Randomizers
 
             loopctr = 0; // altering calculations to prevent infinite loops
             int newSpecies;
-            while (!GetNewSpecies(bannedSpecies, oldpkm, out newSpecies))
+            while (!GetNewSpecies(bannedSpecies, oldpkm, loopctr, out newSpecies))
+            {
                 loopctr++;
+            }
             return newSpecies;
         }
 
@@ -69,8 +80,10 @@ namespace pk3DS.Core.Randomizers
 
             loopctr = 0; // altering calculations to prevent infinite loops
             int newSpecies;
-            while (!GetNewSpecies(oldSpecies, oldpkm, out newSpecies) || !GetIsTypeMatch(newSpecies, type))
-                loopctr++;
+            while (!GetNewSpecies(oldSpecies, oldpkm, loopctr, out newSpecies) || !GetIsTypeMatch(newSpecies, type))
+            {
+                    loopctr++;
+            }
             return newSpecies;
         }
 
@@ -83,7 +96,7 @@ namespace pk3DS.Core.Randomizers
 
             loopctr = 0; // altering calculations to prevent infinite loops
             int newSpecies;
-            while (!GetNewSpecies(oldSpecies, oldpkm, out newSpecies))
+            while (!GetNewSpecies(oldSpecies, oldpkm, loopctr, out newSpecies))
             {
                 if (loopctr > 0x0001_0000)
                 {
@@ -99,7 +112,7 @@ namespace pk3DS.Core.Randomizers
 
         private bool IsSpeciesReplacementBad(int newSpecies, int currentSpecies)
         {
-            return newSpecies == currentSpecies && loopctr < MaxSpeciesID * 10;
+            return newSpecies == currentSpecies;
         }
 
         private bool IsSpeciesEXPRateBad(PersonalInfo oldpkm, PersonalInfo pkm)
@@ -127,6 +140,28 @@ namespace pk3DS.Core.Randomizers
             int lo = oldpkm.BST * l / (h + expand);
             int hi = oldpkm.BST * (h + expand) / l;
             return lo > pkm.BST || pkm.BST > hi;
+        }
+
+        private bool IsSpeciesEVOBad(PersonalInfo oldpkm, PersonalInfo pkm, int oldSpecies, int newSpecies)
+        {
+            if (!rEVO)
+                return false;
+            if (Legal.FinalEvolutions_7.Contains(oldSpecies)) //if old species is fully evolved, only swap with other fully evolved; and if original had no evos, same for replacement
+            {
+                if (!Legal.FinalEvolutions_7.Contains(newSpecies))
+                    return true;
+                if ((oldpkm.EvoStage == 1 || pkm.EvoStage == 1) || (oldpkm.EvoStage != pkm.EvoStage))
+                    return true;
+            }
+            else //if old species was not fully evolved, only swap with other pokemon of the same evo stage that isnt fully evolved
+            {
+                if (Legal.FinalEvolutions_7.Contains(newSpecies))
+                    return true;
+                if (oldpkm.EvoStage != pkm.EvoStage)
+                    return true;
+            }
+            System.Console.WriteLine(" oindex:" + oldSpecies + " oevo:" + oldpkm.EvoStage + " index:" + newSpecies + " evo:" + pkm.EvoStage);
+            return false;
         }
 
         private int[] InitializeSpeciesList()
@@ -220,19 +255,22 @@ namespace pk3DS.Core.Randomizers
 
         public int[] RandomSpeciesList => Enumerable.Range(1, MaxSpeciesID).ToArray();
 
-        private bool GetNewSpecies(int currentSpecies, PersonalInfo oldpkm, out int newSpecies)
+        private bool GetNewSpecies(int currentSpecies, PersonalInfo oldpkm, int loop, out int newSpecies)
         {
             newSpecies = RandSpec.Next();
             PersonalInfo pkm = SpeciesStat[newSpecies];
 
+            //System.Console.WriteLine(loop);
             // Verify it meets specifications
-            if (IsSpeciesReplacementBad(newSpecies, currentSpecies)) // no A->A randomization
+            if ((!allowDupeTestSkip || loop > skipDupeTestLoopThreshold) && IsSpeciesReplacementBad(newSpecies, currentSpecies)) // no A->A randomization
                 return false;
             if (IsSpeciesEXPRateBad(oldpkm, pkm))
                 return false;
-            if (IsSpeciesTypeBad(oldpkm, pkm))
+            if ((!allowTypeTestSkip || loop > skipTypeTestLoopThreshold) && IsSpeciesTypeBad(oldpkm, pkm))
                 return false;
             if (IsSpeciesBSTBad(oldpkm, pkm))
+                return false;
+            if ((!allowEvoTestSkip || loop > skipEvoTestLoopThreshold) && IsSpeciesEVOBad(oldpkm, pkm, currentSpecies, newSpecies))
                 return false;
             return true;
         }

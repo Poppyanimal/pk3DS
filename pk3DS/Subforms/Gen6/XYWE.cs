@@ -528,6 +528,7 @@ namespace pk3DS
                 Shedinja = false,
 
                 rBST = CHK_BST.Checked,
+                rEVO = CHK_EVO.Checked,
             };
             rand.Initialize();
 
